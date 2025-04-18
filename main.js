@@ -29,9 +29,7 @@ const createTextOverlay = async (part, title, content, footer) => {
     // Create SVG for title
     const titleSvg = Buffer.from(`
         <svg width="1080" height="1440">
-            <text x="60" y="110" width="920" height="115" font-family="Montserrat" font-size="${Math.floor(
-                (1080 / title.length) * 1.22,
-            )}" font-weight="800">
+            <text x="60" y="110" width="920" height="115" font-family="Montserrat" font-size="50" font-weight="800">
                 ${title}
             </text>
         </svg>
@@ -59,7 +57,7 @@ const createTextOverlay = async (part, title, content, footer) => {
     const footerSvg = Buffer.from(`
         <svg width="1080" height="1440">
             <text x="60" y="150" width="920" height="40" font-family="Montserrat" font-size="18" font-weight="700" font-style="italic">
-                ${footer}
+                ${footer.split(' ').filter(word => !word.includes('#')).join(' ')}
             </text>
         </svg>
     `)
@@ -82,7 +80,13 @@ const main = async () => {
     const part = texts[0]
     const title = texts[1]
     const footer = texts[2]
-    const content = texts.slice(3).join('\n')
+    let content = texts.slice(3).join('\n')
+    const lbIndex = texts.findIndex(line => line.trim() === 'LỜI BÀN:');
+    if (lbIndex !== -1) {
+        content = texts.slice(3, lbIndex).join('\n');
+    } else {
+        content = texts.slice(3).join('\n');
+    }
     fs.mkdirSync(`output/${part}`, { recursive: true })
     fs.copyFileSync('temp/content.txt', `output/${part}/${part}.txt`)
     fs.copyFileSync('temp/audio.m4a', `output/${part}/${part}.m4a`)
