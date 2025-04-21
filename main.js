@@ -66,14 +66,20 @@ const createTextOverlay = async (part, title, content, footer) => {
 
     // Process content with word wrapping
     const contentLines = content.split('\n')
-    const wrappedLines = contentLines.flatMap((line) =>
-        wrapText(line.trim(), 920, 28, 'Montserrat'),
-    )
+    let wrappedLines = contentLines.flatMap((line) => wrapText(line.trim(), 920, 28, 'Montserrat'))
+    let fontSize = 28
+    // Reduce font size until the number of wrapped lines is <= 25
+    while (wrappedLines.length > 25 && fontSize > 18) {
+        fontSize -= 1
+        wrappedLines = contentLines.flatMap((line) =>
+            wrapText(line.trim(), 920, fontSize, 'Montserrat'),
+        )
+    }
     const contentSvg = Buffer.from(`
         <svg width="1080" height="1440">
             <text x="60" y="${
                 isSplitTitle ? '280' : '210'
-            }" font-family="Montserrat" font-size="28" font-weight="500" fill="black">
+            }" font-family="Montserrat" font-size="${fontSize}" font-weight="500" fill="black">
                 ${wrappedLines
                     .map(
                         (line, index) =>
