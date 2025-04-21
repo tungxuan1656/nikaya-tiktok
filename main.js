@@ -26,11 +26,40 @@ const wrapText = (text, maxWidth, fontSize, fontFamily) => {
 }
 
 const createTextOverlay = async (part, title, content, footer) => {
+    const lengthTitle = title.length
+    let isSplitTitle = false
+    if (lengthTitle > 27) {
+        isSplitTitle = true
+    }
+    // Split title into lines with max length of 27 characters per line
+    let splitTitle = []
+    if (isSplitTitle) {
+        let words = title.split(' ')
+        let currentLine = words[0]
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i]
+            if ((currentLine + ' ' + word).length <= 27) {
+                currentLine += ' ' + word
+            } else {
+                splitTitle.push(currentLine)
+                currentLine = word
+            }
+        }
+        splitTitle.push(currentLine)
+    } else {
+        splitTitle = [title]
+    }
     // Create SVG for title
     const titleSvg = Buffer.from(`
         <svg width="1080" height="1440">
             <text x="60" y="110" width="920" height="115" font-family="Montserrat" font-size="50" font-weight="800">
-                ${title}
+                ${splitTitle
+                    .map(
+                        (part, index) =>
+                            `<tspan x="60" dy="${index === 0 ? '0' : '1.3em'}">${part}</tspan>`,
+                    )
+                    .join('')}
             </text>
         </svg>
     `)
@@ -42,7 +71,9 @@ const createTextOverlay = async (part, title, content, footer) => {
     )
     const contentSvg = Buffer.from(`
         <svg width="1080" height="1440">
-            <text x="60" y="210" font-family="Montserrat" font-size="28" font-weight="500" fill="black">
+            <text x="60" y="${
+                isSplitTitle ? '280' : '210'
+            }" font-family="Montserrat" font-size="28" font-weight="500" fill="black">
                 ${wrappedLines
                     .map(
                         (line, index) =>
@@ -56,8 +87,13 @@ const createTextOverlay = async (part, title, content, footer) => {
     // Create SVG for footer
     const footerSvg = Buffer.from(`
         <svg width="1080" height="1440">
-            <text x="60" y="150" width="920" height="40" font-family="Montserrat" font-size="18" font-weight="700" font-style="italic">
-                ${footer.split(' ').filter(word => !word.includes('#')).join(' ')}
+            <text x="60" y="${
+                isSplitTitle ? '220' : '150'
+            }" width="920" height="40" font-family="Montserrat" font-size="18" font-weight="700" font-style="italic">
+                ${footer
+                    .split(' ')
+                    .filter((word) => !word.includes('#'))
+                    .join(' ')}
             </text>
         </svg>
     `)
@@ -81,11 +117,11 @@ const main = async () => {
     const title = texts[1]
     const footer = texts[2]
     let content = texts.slice(3).join('\n')
-    const lbIndex = texts.findIndex(line => line.trim() === 'LỜI BÀN:');
+    const lbIndex = texts.findIndex((line) => line.trim() === 'LỜI BÀN:')
     if (lbIndex !== -1) {
-        content = texts.slice(3, lbIndex).join('\n');
+        content = texts.slice(3, lbIndex).join('\n')
     } else {
-        content = texts.slice(3).join('\n');
+        content = texts.slice(3).join('\n')
     }
     fs.mkdirSync(`output/${part}`, { recursive: true })
     fs.copyFileSync('temp/content.txt', `output/${part}/${part}.txt`)
